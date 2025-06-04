@@ -1,0 +1,66 @@
+# GenieACS multi-service Docker Compose
+version: "3.8"
+services:
+  mongo:
+    image: mongo:4.4
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  cwmp:
+    build:
+      context: .
+      args:
+        SERVICE: cwmp
+    environment:
+      - MONGODB_CONNECTION_URL=mongodb://mongo/genieacs
+    depends_on:
+      - mongo
+    ports:
+      - "7547:7547"
+    command: ["genieacs-cwmp"]
+
+  nbi:
+    build:
+      context: .
+      args:
+        SERVICE: nbi
+    environment:
+      - MONGODB_CONNECTION_URL=mongodb://mongo/genieacs
+    depends_on:
+      - mongo
+    ports:
+      - "7557:7557"
+    command: ["genieacs-nbi"]
+
+  fs:
+    build:
+      context: .
+      args:
+        SERVICE: fs
+    environment:
+      - MONGODB_CONNECTION_URL=mongodb://mongo/genieacs
+    depends_on:
+      - mongo
+    ports:
+      - "7567:7567"
+    command: ["genieacs-fs"]
+
+  ui:
+    build:
+      context: .
+      args:
+        SERVICE: ui
+    environment:
+      - MONGODB_CONNECTION_URL=mongodb://mongo/genieacs
+      - GENIEACS_UI_JWT_SECRET=changeme
+    depends_on:
+      - mongo
+    ports:
+      - "3000:3000"
+    command: ["genieacs-ui", "--ui-jwt-secret", "changeme"]
+
+volumes:
+  mongo_data:
