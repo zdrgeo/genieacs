@@ -2,40 +2,28 @@ FROM node:22-slim AS base
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 COPY . .
 RUN npm run build
 
-FROM base AS base-cwmp
+FROM base AS genieacs-cwmp
 EXPOSE 7547
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
-    CMD node -e "require('net').createConnection(process.env.HEALTHCHECK_PORT||7547).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
 
-ENTRYPOINT ["npm", "run", "--", "genieacs-cwmp"]
+ENTRYPOINT ["node", "bin/genieacs-cwmp"]
 
-FROM base AS base-nbi
+FROM base AS genieacs-nbi
 EXPOSE 7557
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
-    CMD node -e "require('net').createConnection(process.env.HEALTHCHECK_PORT||7557).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
 
-ENTRYPOINT ["npm", "run", "--", "genieacs-nbi"]
+ENTRYPOINT ["node", "bin/genieacs-nbi"]
 
-FROM base AS base-fs
+FROM base AS genieacs-fs
 EXPOSE 7567
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
-    CMD node -e "require('net').createConnection(process.env.HEALTHCHECK_PORT||7567).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
 
-ENTRYPOINT ["npm", "run", "--", "genieacs-fs"]
+ENTRYPOINT ["node", "bin/genieacs-fs"]
 
-FROM base AS base-ui
+FROM base AS genieacs-ui
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s \
-    CMD node -e "require('net').createConnection(process.env.HEALTHCHECK_PORT||3000).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"
 
-ENTRYPOINT ["npm", "run", "--", "genieacs-ui"]
+ENTRYPOINT ["node", "bin/genieacs-ui"]
